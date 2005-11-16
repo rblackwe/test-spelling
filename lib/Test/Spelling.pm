@@ -2,15 +2,18 @@ package Test::Spelling;
 
 use 5.006;
 use strict;
+use warnings;
 use Pod::Spell;
 use Test::Builder;
 use File::Spec;
-use IPC::Open2;
+use File::Temp;
+use Carp;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
-my $Test = Test::Builder->new;
-my $Spell_cmd = 'spell';
+my $Test        = Test::Builder->new;
+my $Spell_cmd   = 'spell';
+my $Spell_temp  = File::Temp->new->filename;
 
 sub import {
     my $self = shift;
@@ -28,6 +31,8 @@ sub import {
 }
 
 
+my $Pipe_err = 0;
+
 sub pod_file_spelling_ok {
     my $file = shift;
     my $name = @_ ? shift : "POD spelling for $file";
@@ -38,23 +43,26 @@ sub pod_file_spelling_ok {
         return;
     }
 
+    # save digested POD to temp file
     my $checker = Pod::Spell->new;
-    my($fh_in, $fh_out);
-    my $pid = open2($fh_in, $fh_out, $Spell_cmd);
+    $checker->parse_from_file($file, $Spell_temp);
 
-    $checker->parse_from_file($file, $fh_out);
-    close $fh_out or die;
-    my @words = <$fh_in>;
-    close $fh_in or die;
+    # run spell command and fetch output
+    open ASPELL, "$Spell_cmd < $Spell_temp|" 
+        or croak "Couldn't run spellcheck command '$Spell_cmd'";
+    my @words = <ASPELL>;
+    close ASPELL or die;
 
+    # clean up words, remove stopwords, select unique errors
     chomp for @words;
     @words = grep { !$Pod::Wordlist::Wordlist{$_} } @words;
     my %seen;
     @seen{@words} = ();
     @words = map "    $_\n", sort keys %seen;
 
+    # emit output
     my $ok = !@words;
-    $Test->ok( $ok, $name );
+    $Test->ok( $ok, "$name");
     if ( !$ok ) {
         $Test->diag("Errors:\n" . join '', @words);
     }
@@ -124,10 +132,9 @@ sub _is_perl {
 sub add_stopwords {
     for (@_) {
         my $word = $_;
-        chomp $word;
-        next if $word =~ /^# Error:/ or $word =~ /^# Looks like/
-            or $word =~ /Failed test/;
-        $word =~ s/^#\s*//;
+        $word =~ s/^#?\s*//;
+        $word =~ s/\s+$//;
+        next if $word =~ /\s/ or $word =~ /:/;
         $Pod::Wordlist::Wordlist{$word} = 1;
     }
 }
@@ -166,18 +173,24 @@ module distribution:
 Note, however that it is not really recommended to include this test with a
 CPAN distribution, or a package that will run in an uncontrolled environment,
 because there's no way of predicting if F<spell> will be available or the
-wordlist used will give the same results (what if it's in a different language,
-for example?).
+word list used will give the same results (what if it's in a different language,
+for example?). You can have the test, but don't add it to F<MANIFEST> (or add
+it to F<MANIFEST.SKIP> to make sure you don't add it by accident). Anyway,
+your users don't really need to run this test, as it is unlikely that the 
+documentation will acquire typos while in transit. :-)
 
 You can add your own stopwords (words that should be ignored by the spell
 check):
 
-    add_stopwords(qw(adsf thiswordiscorrect));
+    add_stopwords(qw(asdf thiswordiscorrect));
+
+These stopwords are global for the test. See L<Pod::Spell> for a variety of
+ways to add per-file stopwords to each .pm file.
 
 =head1 DESCRIPTION
 
-Check POD files for spelling mistakes, using
-C<Pod::Spell> and F<spell> to do the heavy lifting.
+Check POD files for spelling mistakes, using L<Pod::Spell> and F<spell> to do
+the heavy lifting.
 
 =head1 FUNCTIONS
 
@@ -203,7 +216,7 @@ the F<blib> directory if it exists, or the F<lib> directory if not.
 A POD file is one that ends with F<.pod>, F<.pl> and F<.pm>, or any file
 where the first line looks like a shebang line.
 
-If you're testing a module, just make a F<t/pod.t>:
+If you're testing a module, just make a F<t/spell.t>:
 
     use Test::More;
     use Test::Spelling;
@@ -260,12 +273,23 @@ which will append the diagnostic lines to the end of your test file. Assuming
 you already have a __DATA__ line in your test file, that should be enough to
 ensure that the test passes the next time.
 
+Also note that L<Pod::Spell> skips words believed to be code, such as words
+in verbatim blocks and code labeled with CE<lt>>.
+
 =head2 set_spell_cmd($command)
 
 If the F<spell> program has a different name or is not in your path, you can
 specify an alternative with C<set_spell_cmd>. Any command that takes text
 from standard input and prints a list of misspelled words, one per line, to
 standard output will do. For example, you can use C<aspell -l>.
+
+=head1 SEE ALSO
+
+L<Pod::Spell>
+
+=head1 VERSION
+
+0.11
 
 =head1 AUTHOR
 
@@ -275,7 +299,7 @@ Heavily based on L<Test::Pod> by Andy Lester and brian d foy.
 
 =head1 COPYRIGHT
 
-Copyright 2004, Ivan Tubert-Brohman, All Rights Reserved.
+Copyright 2005, Ivan Tubert-Brohman, All Rights Reserved.
 
 You may use, modify, and distribute this package under the
 same terms as Perl itself.

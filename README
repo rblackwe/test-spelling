@@ -1,4 +1,4 @@
-Test::Spelling version 0.10
+Test::Spelling version 0.11
 ===========================
 
     "Test::Spelling" lets you check the spelling of a POD file, and report
@@ -29,6 +29,15 @@ Test::Spelling version 0.10
 
         add_stopwords(qw(adsf thiswordiscorrect));
 
+    These stopwords are global for the test. See L<Pod::Spell> for a variety of
+    ways to add per-file stopwords to each .pm file.
+
+CHANGES SINCE VERSION 0.10
+        - Some documentation fixes.
+        - Added note about per-file stopwords by Chris Dolan.
+        - Use a temporary file instead of open2() to solve win32 portability
+          issues. (Thanks to Chris Laco!)
+
 INSTALLATION
 
     perl Makefile.PL
@@ -43,6 +52,7 @@ DEPENDENCIES
         Test::More              0
         Test::Builder::Tester   0
         File::Spec              0
+        File::Temp              0
 
 
 COPYRIGHT AND LICENSE

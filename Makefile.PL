@@ -7,8 +7,9 @@ WriteMakefile (
     'PREREQ_PM'      => {
         'Pod::Spell'            => '1.01',
         'Test::More'            => 0,
-        'Test::Builder::Tester' => 0,
         'File::Spec'            => 0,
+        'File::Temp'            => 0,
+        'Carp'                  => 0,
     },
 );
 
