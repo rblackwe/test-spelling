@@ -287,10 +287,6 @@ standard output will do. For example, you can use C<aspell -l>.
 
 L<Pod::Spell>
 
-=head1 VERSION
-
-0.11
-
 =head1 ORIGINAL AUTHOR
 
 Ivan Tubert-Brohman C<< <itub@cpan.org> >>
