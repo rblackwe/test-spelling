@@ -123,7 +123,7 @@ sub _is_perl {
     my $file = shift;
 
     return 1 if $file =~ /\.PL$/;
-    return 1 if $file =~ /\.p(l|m|od)$/;
+    return 1 if $file =~ /\.p(l|lx|m|od)$/;
     return 1 if $file =~ /\.t$/;
 
     open my $handle, '<', $file or return;
@@ -221,8 +221,8 @@ each function), so you can't have already called C<plan>.
 
 If C<@files> is empty or not passed, the function finds all POD files in
 the F<blib> directory if it exists, or the F<lib> directory if not.
-A POD file is one that ends with F<.pod>, F<.pl> and F<.pm>, or any file
-where the first line looks like a shebang line.
+A POD file is one that ends with F<.pod>, F<.pl>, F<.plx> and F<.pm>, or any
+file where the first line looks like a shebang line.
 
 If you're testing a module, just make a F<t/spell.t>:
 
