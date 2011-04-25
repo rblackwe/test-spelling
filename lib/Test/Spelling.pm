@@ -21,7 +21,7 @@ our @EXPORT = qw(
     has_working_spellchecker
 );
 
-my $Test = Test::Builder->new;
+my $TEST = Test::Builder->new;
 
 my $SPELLCHECKER;
 my $FILE_FILTER = sub { 1 };
@@ -116,8 +116,8 @@ sub pod_file_spelling_ok {
     my $name = shift || "POD spelling for $file";
 
     if (!-r $file) {
-        $Test->ok(0, $name);
-        $Test->diag("$file does not exist or is unreadable");
+        $TEST->ok(0, $name);
+        $TEST->diag("$file does not exist or is unreadable");
         return;
     }
 
@@ -131,9 +131,9 @@ sub pod_file_spelling_ok {
 
     # emit output
     my $ok = @words == 0;
-    $Test->ok($ok, "$name");
+    $TEST->ok($ok, "$name");
     if (!$ok) {
-        $Test->diag("Errors:\n" . join '', map { "    $_\n" } @words);
+        $TEST->diag("Errors:\n" . join '', map { "    $_\n" } @words);
     }
 
     return $ok;
@@ -143,10 +143,10 @@ sub all_pod_files_spelling_ok {
     my @files = all_pod_files(@_);
 
     if (!has_working_spellchecker()) {
-        return $Test->plan(skip_all => "no working spellchecker found");
+        return $TEST->plan(skip_all => "no working spellchecker found");
     }
 
-    $Test->plan(tests => scalar @files);
+    $TEST->plan(tests => scalar @files);
 
     my $ok = 1;
     for my $file (@files) {
