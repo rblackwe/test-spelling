@@ -24,7 +24,7 @@ our @EXPORT = qw(
 my $Test = Test::Builder->new;
 
 my $SPELLCHECKER;
-my $file_filter = sub { 1 };
+my $FILE_FILTER = sub { 1 };
 
 sub spellchecker_candidates {
     # if they've specified a spellchecker, use only that one
@@ -177,7 +177,7 @@ sub all_pod_files {
         # add the file if it meets our criteria
         if (-f $file) {
             next unless _is_perl($file);
-            next unless $file_filter->($file);
+            next unless $FILE_FILTER->($file);
             push @pod, $file;
         }
     }
@@ -222,7 +222,7 @@ sub set_spell_cmd {
 }
 
 sub set_pod_file_filter {
-    $file_filter = shift;
+    $FILE_FILTER = shift;
 }
 
 1;
