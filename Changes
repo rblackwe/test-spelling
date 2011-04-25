@@ -4,6 +4,8 @@ Revision history for Test-Spelling
         - Best Practical has taken over maintainership of this module
         - Clean up temporary files more aggressively [rt.cpan.org #41586]
           (reported by Tokuhiro Matsuno)
+        - Correct aspell suggestion from -l to list [rt.cpan.org #28967]
+          (reported by David Hand)
 
 0.11  2005-11-15
         - Some documentation fixes.

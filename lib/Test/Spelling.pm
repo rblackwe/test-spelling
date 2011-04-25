@@ -273,7 +273,7 @@ in verbatim blocks and code labeled with CE<lt>>.
 If the F<spell> program has a different name or is not in your path, you can
 specify an alternative with C<set_spell_cmd>. Any command that takes text
 from standard input and prints a list of misspelled words, one per line, to
-standard output will do. For example, you can use C<aspell -l>.
+standard output will do. For example, you can use C<aspell list>.
 
 =head1 SEE ALSO
 
