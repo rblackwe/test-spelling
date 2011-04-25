@@ -1,5 +1,8 @@
 Revision history for Test-Spelling
 
+0.12  2011-04-25
+        - Best Practical has taken over maintainership of this module
+
 0.11  2005-11-15
         - Some documentation fixes.
         - Added note about per-file stopwords by Chris Dolan.
