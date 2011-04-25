@@ -18,6 +18,7 @@ our @EXPORT = qw(
     set_spell_cmd
     all_pod_files
     set_pod_file_filter
+    has_working_spellchecker
 );
 
 my $Test = Test::Builder->new;
@@ -37,8 +38,19 @@ sub spellchecker_candidates {
     );
 }
 
+sub has_working_spellchecker {
+    my $dryrun_results = _get_spellcheck_results("dry run", 1);
+
+    if (ref $dryrun_results) {
+        return;
+    }
+
+    return $SPELLCHECKER;
+}
+
 sub _get_spellcheck_results {
     my $document = shift;
+    my $dryrun = shift;
 
     my @errors;
 
@@ -63,7 +75,8 @@ sub _get_spellcheck_results {
         if ($ok) {
             # remember the one we used, so that it's consistent for all the files
             # this run, and we don't keep retrying the same spellcheckers that will
-            # never work
+            # never work. also we need to expose the spellchecker we're using in
+            # has_working_spellchecker
             set_spell_cmd($spellchecker)
                 if !$SPELLCHECKER;
             return @words;
@@ -71,6 +84,9 @@ sub _get_spellcheck_results {
 
         push @errors, "Unable to run '$spellchecker': $@";
     }
+
+    # no working spellcheckers during a dry run
+    return \"no spellchecker" if $dryrun;
 
     # no working spellcheckers; report all the errors
     require Carp;
@@ -85,7 +101,7 @@ sub invalid_words_in {
     my $document = '';
     open my $handle, '>', \$document;
 
-    # save digested POD to temp file
+    # save digested POD to the string $document
     my $checker = Pod::Spell->new;
     $checker->parse_from_file($file, $handle);
 
@@ -125,6 +141,10 @@ sub pod_file_spelling_ok {
 
 sub all_pod_files_spelling_ok {
     my @files = all_pod_files(@_);
+
+    if (!has_working_spellchecker()) {
+        return $Test->plan(skip_all => "no working spellchecker found");
+    }
 
     $Test->plan(tests => scalar @files);
 
