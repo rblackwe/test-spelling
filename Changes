@@ -6,6 +6,8 @@ Revision history for Test-Spelling
           (reported by Tokuhiro Matsuno)
         - Correct aspell suggestion from -l to list [rt.cpan.org #28967]
           (reported by David Hand)
+        - Add set_pod_file_filter for skipping translations, etc.
+          [rt.cpan.org #63755] (reported by me :))
 
 0.11  2005-11-15
         - Some documentation fixes.

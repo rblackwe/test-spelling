@@ -16,12 +16,14 @@ our @EXPORT = qw(
     add_stopwords
     set_spell_cmd
     all_pod_files
+    set_pod_file_filter
 );
 
 our $VERSION = '0.11';
 
 my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
+my $file_filter = sub { 1 };
 
 sub pod_file_spelling_ok {
     my $file = shift;
@@ -92,7 +94,9 @@ sub all_pod_files {
             push @queue, map "$file/$_", @newfiles;
         }
         if ( -f $file ) {
-            push @pod, $file if _is_perl( $file );
+            next unless !_is_perl($file);
+            next unless $file_filter->($file);
+            push @pod, $file;
         }
     } # while
     return @pod;
@@ -133,6 +137,10 @@ sub add_stopwords {
 
 sub set_spell_cmd {
     $Spell_cmd = shift;
+}
+
+sub set_pod_file_filter {
+    $file_filter = shift;
 }
 
 1;
@@ -232,6 +240,9 @@ A Perl file is:
 
 =back
 
+Furthermore, files for which the filter set by L</set_pod_file_filter> return
+false are skipped. By default this filter passes everything through.
+
 The order of the files returned is machine-dependent.  If you want them
 sorted, you'll have to sort them yourself.
 
@@ -274,6 +285,20 @@ If the F<spell> program has a different name or is not in your path, you can
 specify an alternative with C<set_spell_cmd>. Any command that takes text
 from standard input and prints a list of misspelled words, one per line, to
 standard output will do. For example, you can use C<aspell list>.
+
+=head2 set_pod_file_filter($code)
+
+If your project has POD documents written in languages other than English, then
+obviously you don't want to be running a spellchecker on every Perl file.
+C<set_pod_file_filter> lets you filter out files returned from
+L</all_pod_files> (and hence, the documents tested by
+L</all_pod_files_spelling_ok>).
+
+    set_pod_file_filter(sub {
+        my $filename = shift;
+        return 0 if $filename =~ /_ja.pod$/; # skip Japanese translations
+        return 1;
+    });
 
 =head1 SEE ALSO
 
