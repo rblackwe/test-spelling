@@ -7,7 +7,7 @@ use base 'Exporter';
 use Pod::Spell;
 use Test::Builder;
 use File::Spec;
-use IPC::Open2;
+use IPC::Open3;
 
 our $VERSION = '0.12';
 
@@ -45,7 +45,7 @@ sub _get_spellcheck_results {
     for my $spellchecker (spellchecker_candidates()) {
         my @words;
         my $ok = eval {
-            my $pid = open2((my ($spellcheck_results, $child_in)), $spellchecker);
+            my $pid = open3((my ($child_in, $spellcheck_results, $child_err)), $spellchecker);
 
             print $child_in $document;
 
