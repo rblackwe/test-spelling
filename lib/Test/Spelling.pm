@@ -91,10 +91,9 @@ sub all_pod_files {
     while ( @queue ) {
         my $file = shift @queue;
         if ( -d $file ) {
-            local *DH;
-            opendir DH, $file or next;
-            my @newfiles = readdir DH;
-            closedir DH;
+            opendir my $dirhandle, $file or next;
+            my @newfiles = readdir $dirhandle;
+            closedir $dirhandle;
 
             @newfiles = File::Spec->no_upwards( @newfiles );
             @newfiles = grep { $_ ne "CVS" && $_ ne ".svn" } @newfiles;
