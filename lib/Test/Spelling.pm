@@ -46,11 +46,11 @@ sub invalid_words_in {
 
 sub pod_file_spelling_ok {
     my $file = shift;
-    my $name = @_ ? shift : "POD spelling for $file";
+    my $name = shift || "POD spelling for $file";
 
-    if (!-f $file) {
+    if (!-r $file) {
         $Test->ok(0, $name);
-        $Test->diag("$file does not exist");
+        $Test->diag("$file does not exist or is unreadable");
         return;
     }
 
@@ -60,13 +60,13 @@ sub pod_file_spelling_ok {
     @words = grep { !$Pod::Wordlist::Wordlist{$_} } @words;
     my %seen;
     @seen{@words} = ();
-    @words = map "    $_\n", sort keys %seen;
+    @words = sort keys %seen;
 
     # emit output
-    my $ok = !@words;
+    my $ok = @words == 0;
     $Test->ok($ok, "$name");
     if (!$ok) {
-        $Test->diag("Errors:\n" . join '', @words);
+        $Test->diag("Errors:\n" . join '', map { "    $_\n" } @words);
     }
 
     return $ok;
@@ -90,9 +90,11 @@ sub all_pod_files {
 
     while (@queue) {
         my $file = shift @queue;
+
+        # recurse into subdirectories
         if (-d $file) {
-            opendir my $dirhandle, $file or next;
-            my @newfiles = readdir $dirhandle;
+            opendir(my $dirhandle, $file) or next;
+            my @newfiles = readdir($dirhandle);
             closedir $dirhandle;
 
             @newfiles = File::Spec->no_upwards(@newfiles);
@@ -100,17 +102,20 @@ sub all_pod_files {
 
             push @queue, map "$file/$_", @newfiles;
         }
+
+        # add the file if it meets our criteria
         if (-f $file) {
             next unless _is_perl($file);
             next unless $file_filter->($file);
             push @pod, $file;
         }
-    } # while
+    }
+
     return @pod;
 }
 
 sub _starting_points {
-    return 'blib' if -e 'blib';
+    return 'blib' if -d 'blib';
     return 'lib';
 }
 
@@ -121,19 +126,16 @@ sub _is_perl {
     return 1 if $file =~ /\.p(l|m|od)$/;
     return 1 if $file =~ /\.t$/;
 
-    local *FH;
-    open FH, $file or return;
-    my $first = <FH>;
-    close FH;
+    open my $handle, '<', $file or return;
+    my $first = <$handle>;
 
     return 1 if defined $first && ($first =~ /^#!.*perl/);
 
-    return;
+    return 0;
 }
 
 sub add_stopwords {
-    for (@_) {
-        my $word = $_;
+    for my $word (@_) {
         $word =~ s/^#?\s*//;
         $word =~ s/\s+$//;
         next if $word =~ /\s/ or $word =~ /:/;
