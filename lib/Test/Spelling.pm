@@ -102,7 +102,7 @@ sub all_pod_files {
             push @queue, map "$file/$_", @newfiles;
         }
         if ( -f $file ) {
-            next unless !_is_perl($file);
+            next unless _is_perl($file);
             next unless $file_filter->($file);
             push @pod, $file;
         }
