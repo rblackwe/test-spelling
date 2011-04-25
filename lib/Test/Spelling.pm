@@ -39,7 +39,7 @@ sub pod_file_spelling_ok {
     $checker->parse_from_file($file, $Spell_temp);
 
     # run spell command and fetch output
-    open ASPELL, "$Spell_cmd < $Spell_temp|" 
+    open ASPELL, "$Spell_cmd < $Spell_temp|"
         or croak "Couldn't run spellcheck command '$Spell_cmd'";
     my @words = <ASPELL>;
     close ASPELL or die;
@@ -167,7 +167,7 @@ because there's no way of predicting if F<spell> will be available or the
 word list used will give the same results (what if it's in a different language,
 for example?). You can have the test, but don't add it to F<MANIFEST> (or add
 it to F<MANIFEST.SKIP> to make sure you don't add it by accident). Anyway,
-your users don't really need to run this test, as it is unlikely that the 
+your users don't really need to run this test, as it is unlikely that the
 documentation will acquire typos while in transit. :-)
 
 You can add your own stopwords (words that should be ignored by the spell
