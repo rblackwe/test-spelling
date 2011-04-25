@@ -24,8 +24,6 @@ my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
 my $Spell_temp  = File::Temp->new->filename;
 
-my $Pipe_err = 0;
-
 sub pod_file_spelling_ok {
     my $file = shift;
     my $name = @_ ? shift : "POD spelling for $file";
