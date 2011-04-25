@@ -1,14 +1,16 @@
 package Test::Spelling;
-
 use 5.006;
 use strict;
 use warnings;
+
+use base 'Exporter';
 use Pod::Spell;
 use Test::Builder;
 use File::Spec;
 use File::Temp;
 use Carp;
-use base 'Exporter';
+
+our $VERSION = '0.12';
 
 our @EXPORT = qw(
     pod_file_spelling_ok
@@ -18,8 +20,6 @@ our @EXPORT = qw(
     all_pod_files
     set_pod_file_filter
 );
-
-our $VERSION = '0.12';
 
 my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
@@ -48,9 +48,9 @@ sub pod_file_spelling_ok {
     my $file = shift;
     my $name = @_ ? shift : "POD spelling for $file";
 
-    if ( !-f $file ) {
-        $Test->ok( 0, $name );
-        $Test->diag( "$file does not exist" );
+    if (!-f $file) {
+        $Test->ok(0, $name);
+        $Test->diag("$file does not exist");
         return;
     }
 
@@ -64,8 +64,8 @@ sub pod_file_spelling_ok {
 
     # emit output
     my $ok = !@words;
-    $Test->ok( $ok, "$name");
-    if ( !$ok ) {
+    $Test->ok($ok, "$name");
+    if (!$ok) {
         $Test->diag("Errors:\n" . join '', @words);
     }
 
@@ -75,32 +75,32 @@ sub pod_file_spelling_ok {
 sub all_pod_files_spelling_ok {
     my @files = all_pod_files(@_);
 
-    $Test->plan( tests => scalar @files );
+    $Test->plan(tests => scalar @files);
 
     my $ok = 1;
-    foreach my $file ( @files ) {
-        pod_file_spelling_ok( $file, ) or undef $ok;
+    for my $file (@files) {
+        pod_file_spelling_ok($file) or undef $ok;
     }
     return $ok;
 }
 
 sub all_pod_files {
     my @queue = @_ ? @_ : _starting_points();
-    my @pod = ();
+    my @pod;
 
-    while ( @queue ) {
+    while (@queue) {
         my $file = shift @queue;
-        if ( -d $file ) {
+        if (-d $file) {
             opendir my $dirhandle, $file or next;
             my @newfiles = readdir $dirhandle;
             closedir $dirhandle;
 
-            @newfiles = File::Spec->no_upwards( @newfiles );
+            @newfiles = File::Spec->no_upwards(@newfiles);
             @newfiles = grep { $_ ne "CVS" && $_ ne ".svn" } @newfiles;
 
             push @queue, map "$file/$_", @newfiles;
         }
-        if ( -f $file ) {
+        if (-f $file) {
             next unless _is_perl($file);
             next unless $file_filter->($file);
             push @pod, $file;
@@ -130,7 +130,6 @@ sub _is_perl {
 
     return;
 }
-
 
 sub add_stopwords {
     for (@_) {
@@ -167,7 +166,7 @@ F<spell> program.
     use Test::More;
     use Test::Spelling;
     plan tests => $num_tests;
-    pod_file_spelling_ok( $file, "POD file spelling OK" );
+    pod_file_spelling_ok($file, "POD file spelling OK");
 
 Module authors can include the following in a F<t/pod_spell.t> file and
 have C<Test::Spelling> automatically find and check all POD files in a
