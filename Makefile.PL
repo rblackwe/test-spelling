@@ -6,7 +6,5 @@ repository 'http://github.com/bestpractical/test-spelling';
 
 requires 'Pod::Spell' => '1.01';
 
-test_requires 'Test::More' => 0;
-
 WriteAll;
 
