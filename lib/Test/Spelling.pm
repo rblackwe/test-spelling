@@ -8,26 +8,21 @@ use Test::Builder;
 use File::Spec;
 use File::Temp;
 use Carp;
+use base 'Exporter';
+
+our @EXPORT = qw(
+    pod_file_spelling_ok
+    all_pod_files_spelling_ok
+    add_stopwords
+    set_spell_cmd
+    all_pod_files
+);
 
 our $VERSION = '0.11';
 
 my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
 my $Spell_temp  = File::Temp->new->filename;
-
-sub import {
-    my $self = shift;
-    my $caller = caller;
-    no strict 'refs';
-    *{$caller.'::pod_file_spelling_ok'}      = \&pod_file_spelling_ok;
-    *{$caller.'::all_pod_files_spelling_ok'} = \&all_pod_files_spelling_ok;
-    *{$caller.'::add_stopwords'}             = \&add_stopwords;
-    *{$caller.'::set_spell_cmd'}             = \&set_spell_cmd;
-    *{$caller.'::all_pod_files'}             = \&all_pod_files
-        unless defined &{$caller. '::all_pod_files'};
-
-}
-
 
 my $Pipe_err = 0;
 
