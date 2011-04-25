@@ -2,14 +2,24 @@ Revision history for Test-Spelling
 
 0.12  2011-04-25
         - Best Practical has taken over maintainership of this module
-        - Clean up temporary files more aggressively [rt.cpan.org #41586]
+        - Try various spellcheck programs instead of hardcoding the ancient
+          `spell` [rt.cpan.org #56483] (reported by Lars Dɪᴇᴄᴋᴏᴡ, et al)
+        - Remove temporary files more aggressively [rt.cpan.org #41586]
           (reported by Tokuhiro Matsuno)
-        - Correct aspell suggestion from -l to list [rt.cpan.org #28967]
+          - fixed by not creating them at all :) instead we now use IPC::Open3
+        - Remove suggestion to use broken `aspell -l` [rt.cpan.org #28967]
           (reported by David Hand)
         - Add set_pod_file_filter for skipping translations, etc.
           [rt.cpan.org #63755] (reported by me :))
-        - Try various spellcheck programs [rt.cpan.org #56483] (reported by
-          Lars Dɪᴇᴄᴋᴏᴡ, et al)
+        - Skip tests in all_pod_files_spelling_ok if there is no working
+          spellchecker
+        - Provide a has_working_spellchecker so you can skip your own tests if
+          there's no working spellchecker
+        - Switch to Module::Install
+        - Rewrite and modernize a lot of the documentation
+        - Decruftify code, such as by using Exporter and lexical filehandles
+        - Support .plx files (you're welcome Schwern)
+
 
 0.11  2005-11-15
         - Some documentation fixes.
