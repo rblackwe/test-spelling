@@ -8,7 +8,6 @@ use Pod::Spell;
 use Test::Builder;
 use File::Spec;
 use File::Temp;
-use Carp;
 
 our $VERSION = '0.12';
 
@@ -21,9 +20,53 @@ our @EXPORT = qw(
     set_pod_file_filter
 );
 
-my $Test        = Test::Builder->new;
-my $Spell_cmd   = 'spell';
+my $Test = Test::Builder->new;
+
+my $SPELLCHECKER;
 my $file_filter = sub { 1 };
+
+sub spellchecker_candidates {
+    # if they've specified a spellchecker, use only that one
+    return $SPELLCHECKER if $SPELLCHECKER;
+
+    return (
+        'spell', # for back-compat, this is the top candidate ...
+        'aspell list -l en', # ... but this should become first soon
+        'ispell -l',
+        'hunspell',
+    );
+}
+
+sub _get_spellcheck_results {
+    my $scratch = shift;
+
+    my @errors;
+
+    for my $spellchecker (spellchecker_candidates()) {
+        my $spellcheck_handle;
+        if (open $spellcheck_handle, "$spellchecker < $scratch |") {
+            push @errors, "Unable to run '$spellchecker': $!";
+            next;
+        }
+
+        my @words = <$spellcheck_handle>;
+        close $spellcheck_handle or die $!;
+
+        # remember the one we used, so that it's consistent for all the files
+        # this run, and we don't keep retrying the same spellcheckers that will
+        # never work
+        set_spell_cmd($spellchecker)
+            if !$SPELLCHECKER;
+
+        return @words;
+    }
+
+    # no working spellcheckers; report all the errors
+    require Carp;
+    Carp::croak
+        "Unable to find a working spellchecker:\n"
+        . join("\n", map { "    $_\n" } @errors)
+}
 
 sub invalid_words_in {
     my $file = shift;
@@ -34,11 +77,7 @@ sub invalid_words_in {
     my $checker = Pod::Spell->new;
     $checker->parse_from_file($file, $scratch);
 
-    # run spell command and fetch output
-    open my $spellcheck_results, "$Spell_cmd < $scratch|"
-        or croak "Couldn't run spellcheck command '$Spell_cmd'";
-    my @words = <$spellcheck_results>;
-    close $spellcheck_results or die;
+    my @words = _get_spellcheck_results($scratch);
 
     chomp for @words;
     return @words;
@@ -144,7 +183,7 @@ sub add_stopwords {
 }
 
 sub set_spell_cmd {
-    $Spell_cmd = shift;
+    $SPELLCHECKER = shift;
 }
 
 sub set_pod_file_filter {
