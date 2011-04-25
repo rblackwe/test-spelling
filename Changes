@@ -1,0 +1,11 @@
+Revision history for Test-Spelling
+
+0.11  2005-11-15
+        - Some documentation fixes.
+        - Added note about per-file stopwords by Chris Dolan.
+        - Use a temporary file instead of open2() to solve win32 portability
+          issues. (Thanks to Chris Laco!)
+
+0.10  2005-08-02
+        - First version
+
