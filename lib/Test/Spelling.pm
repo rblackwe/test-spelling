@@ -207,6 +207,9 @@ sub _is_perl {
 
 sub add_stopwords {
     for my $word (@_) {
+        # XXX: the processing this performs is to support "perl t/spell.t 2>>
+        # t/spell.t" which is bunk. in the near future the processing here will
+        # become more modern
         $word =~ s/^#?\s*//;
         $word =~ s/\s+$//;
         next if $word =~ /\s/ or $word =~ /:/;
@@ -232,82 +235,102 @@ Test::Spelling - check for spelling errors in POD files
 
 =head1 SYNOPSIS
 
-C<Test::Spelling> lets you check the spelling of a POD file, and report
-its results in standard C<Test::Simple> fashion. This module requires the
-F<spell> program.
-
     use Test::More;
-    use Test::Spelling;
-    plan tests => $num_tests;
-    pod_file_spelling_ok($file, "POD file spelling OK");
+    BEGIN {
+        plan skip_all => "Spelling tests only for authors"
+            unless -d 'inc/.author';
+    }
 
-Module authors can include the following in a F<t/pod_spell.t> file and
-have C<Test::Spelling> automatically find and check all POD files in a
-module distribution:
-
-    use Test::More;
     use Test::Spelling;
     all_pod_files_spelling_ok();
-
-Note, however that it is not really recommended to include this test with a
-CPAN distribution, or a package that will run in an uncontrolled environment,
-because there's no way of predicting if F<spell> will be available or the
-word list used will give the same results (what if it's in a different language,
-for example?). You can have the test, but don't add it to F<MANIFEST> (or add
-it to F<MANIFEST.SKIP> to make sure you don't add it by accident). Anyway,
-your users don't really need to run this test, as it is unlikely that the
-documentation will acquire typos while in transit. :-)
-
-You can add your own stopwords (words that should be ignored by the spell
-check):
-
-    add_stopwords(qw(asdf thiswordiscorrect));
-
-These stopwords are global for the test. See L<Pod::Spell> for a variety of
-ways to add per-file stopwords to each .pm file.
 
 =head1 DESCRIPTION
 
-Check POD files for spelling mistakes, using L<Pod::Spell> and F<spell> to do
-the heavy lifting.
+C<Test::Spelling> lets you check the spelling of a POD file, and report
+its results in standard C<Test::More> fashion. This module requires a
+spellcheck program such as F<spell>, F<aspell>, F<ispell>, or F<hunspell>.
+
+    use Test::Spelling;
+    pod_file_spelling_ok('lib/Foo/Bar.pm', 'POD file spelling OK');
+
+Note that it is a bad idea to run spelling tests during an ordinary CPAN
+distribution install, or in a package that will run in an uncontrolled
+environment. There is no way of predicting whether the word list or spellcheck
+program used will give the same results. You B<can> include the test in your
+distribution, but be sure to run it only for authors of the module by guarding
+it in a C<skip_all unless -d 'inc/.author'> clause, or by putting the test in
+your distribution's F<xt/> directory. Anyway, people installing your module
+really do not need to run such tests, as it is unlikely that the documentation
+will acquire typos while in transit. :-)
+
+You can add your own stopwords, which are words that should be ignored by the
+spell check, like so:
+
+    add_stopwords(qw(asdf thiswordiscorrect));
+
+Adding stopwards in this fashion affects all files checked for the remainder of
+the test script. See L<Pod::Spell> (which this module is built upon) for a
+variety of ways to add per-file stopwords to each .pm file.
+
+If you have a lot of stopwords, it's useful to put them in your test file's
+C<DATA> section like so:
+
+    use Test::Spelling;
+    add_stopwords(<DATA>);
+    all_pod_files_spelling_ok();
+
+    __END__
+    folksonomy
+    Jifty
+    Zakirov
+
+To maintain backwards compatibility, comment markers and some whitespace are
+ignored. In the near future, the preprocessing we do on the arguments to
+L<add_stopwords> will be changed and documented properly.
 
 =head1 FUNCTIONS
 
-=head2 pod_file_spelling_ok( FILENAME[, TESTNAME ] )
-
-C<pod_file_spelling_ok()> will okay the test if the POD has no spelling errors.
-
-When it fails, C<pod_file_spelling_ok()> will show any spelling errors as
-diagnostics.
-
-The optional second argument TESTNAME is the name of the test.  If it
-is omitted, C<pod_file_spelling_ok()> chooses a default test name "POD spelling
-for FILENAME".
-
 =head2 all_pod_files_spelling_ok( [@files/@directories] )
 
-Checks all the files in C<@files> for POD spelling.  It runs L<all_pod_files()>
-on each file/directory, and calls the C<plan()> function for you (one test for
-each function), so you can't have already called C<plan>.
+Checks all the files for POD spelling. It gathers L<all_pod_files()> on each
+file/directory, and declares a L<Test::More/plan> for you (one test for each
+file), so you must not call C<plan> yourself.
 
-If C<@files> is empty or not passed, the function finds all POD files in
-the F<blib> directory if it exists, or the F<lib> directory if not.
-A POD file is one that ends with F<.pod>, F<.pl>, F<.plx>, or F<.pm>; or any
-file where the first line looks like a shebang line.
+If C<@files> is empty, the function finds all POD files in the F<blib>
+directory if it exists, or the F<lib> directory if it does not. A POD file is
+one that ends with F<.pod>, F<.pl>, F<.plx>, or F<.pm>; or any file where the
+first line looks like a perl shebang line.
 
-If you're testing a module, just make a F<t/spell.t>:
+If there is no working spellchecker (determined by
+L</has_working_spellchecker>), this test will issue a "skip all" directive.
+
+If you're testing a distribution, just create a F<t/pod-spell.t>:
 
     use Test::More;
+    plan skip_all => "Spelling tests only for authors" unless -d "inc/.author";
     use Test::Spelling;
     all_pod_files_spelling_ok();
 
-Returns true if all pod files are ok, or false if any fail.
+Returns true if every POD file has correct spelling, or false if any of them fail.
+This function will show any spelling errors as diagnostics.
+
+=head2 pod_file_spelling_ok( FILENAME[, TESTNAME ] )
+
+C<pod_file_spelling_ok> will test that the given POD file has no spelling
+errors.
+
+When it fails, C<pod_file_spelling_ok> will show any spelling errors as
+diagnostics.
+
+The optional second argument TESTNAME is the name of the test.  If it
+is omitted, C<pod_file_spelling_ok> chooses a default test name "POD spelling
+for FILENAME".
 
 =head2 all_pod_files( [@dirs] )
 
-Returns a list of all the Perl files in I<$dir> and in directories below.
-If no directories are passed, it defaults to F<blib> if F<blib> exists,
-or else F<lib> if not.  Skips any files in CVS or .svn directories.
+Returns a list of all the Perl files in each directory and its subdirectories,
+recursively. If no directories are passed, it defaults to F<blib> if F<blib>
+exists, or else F<lib> if not. Skips any files in F<CVS> or F<.svn> directories.
 
 A Perl file is:
 
@@ -320,50 +343,34 @@ A Perl file is:
 =back
 
 Furthermore, files for which the filter set by L</set_pod_file_filter> return
-false are skipped. By default this filter passes everything through.
+false are skipped. By default, this filter passes everything through.
 
 The order of the files returned is machine-dependent.  If you want them
 sorted, you'll have to sort them yourself.
 
 =head2 add_stopwords(@words)
 
-Add words that should be skipped by the spell check. A suggested use is to list
-these words, one per line, in the __DATA__ section of your test file, and just
-call
+Add words that should be skipped by the spellcheck. Note that L<Pod::Spell>
+already skips words believed to be code, such as everything in verbatim
+(indented) blocks and code marked up with C<< C<...> >>, as well as some common
+Perl jargon.
 
-    add_stopwords(<DATA>);
+=head2 has_working_spellchecker
 
-As a convenience, C<add_stopwords> will automatically ignore a comment mark and
-one or more spaces from the beginning of the line, and it will ignore lines
-that say '# Error:' or '# Looks like' or /Failed test/. The reason? Let's say
-you run a test and get this result:
-
-    1..1
-    not ok 1 - POD spelling for lib/Test/Spelling.pm
-    #     Failed test (lib/Test/Spelling.pm at line 70)
-    # Errors:
-    #     stopwords
-    # Looks like you failed 1 tests of 1.
-
-Let's say you decide that all the words that were marked as errors are really
-correct. The diagnostic lines are printed to STDERR; that means that, if you
-have a decent shell, you can type something like
-
-    perl t/spell.t 2>> t/spell.t
-
-which will append the diagnostic lines to the end of your test file. Assuming
-you already have a __DATA__ line in your test file, that should be enough to
-ensure that the test passes the next time.
-
-Also note that L<Pod::Spell> skips words believed to be code, such as words
-in verbatim blocks and code labeled with CE<lt>>.
+C<has_working_spellchecker> will return C<undef> if there is no working
+spellchecker, or a true value (the spellchecker command itself) if there is.
+The module performs a dry-run to determine whether any of the spellcheckers it
+can will use work on the current system. You can use this to skip tests if
+there is no spellchecker. Note that L</all_pod_files_spelling_ok> will do this
+for you.
 
 =head2 set_spell_cmd($command)
 
-If the F<spell> program has a different name or is not in your path, you can
-specify an alternative with C<set_spell_cmd>. Any command that takes text
-from standard input and prints a list of misspelled words, one per line, to
-standard output will do. For example, you can use C<aspell list>.
+If you want to force this module to use a particular spellchecker, then you can
+specify which one with C<set_spell_cmd>. This is useful to ensure a more
+consistent lexicon between developers, or if you have an unusual environment.
+Any command that takes text from standard input and prints a list of misspelled
+words, one per line, to standard output will do.
 
 =head2 set_pod_file_filter($code)
 
