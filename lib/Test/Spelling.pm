@@ -42,10 +42,10 @@ sub pod_file_spelling_ok {
     $checker->parse_from_file($file, $scratch);
 
     # run spell command and fetch output
-    open ASPELL, "$Spell_cmd < $scratch|"
+    open my $spellcheck_results, "$Spell_cmd < $scratch|"
         or croak "Couldn't run spellcheck command '$Spell_cmd'";
-    my @words = <ASPELL>;
-    close ASPELL or die;
+    my @words = <$spellcheck_results>;
+    close $spellcheck_results or die;
 
     # clean up words, remove stopwords, select unique errors
     chomp for @words;
