@@ -288,7 +288,7 @@ Heavily based on L<Test::Pod> by Andy Lester and brian d foy.
 
 =head1 MAINTAINER
 
-Shawn M Moore C<< <sartak@bestpractical.com>
+Shawn M Moore C<< <sartak@bestpractical.com> >>
 
 =head1 COPYRIGHT
 
