@@ -33,7 +33,7 @@ sub spellchecker_candidates {
         'spell', # for back-compat, this is the top candidate ...
         'aspell list -l en', # ... but this should become first soon
         'ispell -l',
-        'hunspell',
+        'hunspell -l',
     );
 }
 
