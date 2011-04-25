@@ -26,7 +26,6 @@ sub import {
     *{$caller.'::all_pod_files'}             = \&all_pod_files
         unless defined &{$caller. '::all_pod_files'};
 
-    $Test->plan(@_);
 }
 
 
