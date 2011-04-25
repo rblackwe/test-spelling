@@ -7,7 +7,7 @@ use base 'Exporter';
 use Pod::Spell;
 use Test::Builder;
 use File::Spec;
-use File::Temp;
+use IPC::Open2;
 
 our $VERSION = '0.12';
 
@@ -38,27 +38,38 @@ sub spellchecker_candidates {
 }
 
 sub _get_spellcheck_results {
-    my $scratch = shift;
+    my $document = shift;
 
     my @errors;
 
     for my $spellchecker (spellchecker_candidates()) {
-        my $spellcheck_handle;
-        if (open $spellcheck_handle, "$spellchecker < $scratch |") {
-            push @errors, "Unable to run '$spellchecker': $!";
-            next;
+        my @words;
+        my $ok = eval {
+            my $pid = open2((my ($spellcheck_results, $child_in)), $spellchecker);
+
+            print $child_in $document;
+
+            # signal to spellchecker that we're done giving it words
+            close $child_in or die $!;
+
+            @words = <$spellcheck_results>;
+
+            # wait for spellchecker to clean up
+            waitpid $pid, 0;
+
+            1;
+        };
+
+        if ($ok) {
+            # remember the one we used, so that it's consistent for all the files
+            # this run, and we don't keep retrying the same spellcheckers that will
+            # never work
+            set_spell_cmd($spellchecker)
+                if !$SPELLCHECKER;
+            return @words;
         }
 
-        my @words = <$spellcheck_handle>;
-        close $spellcheck_handle or die $!;
-
-        # remember the one we used, so that it's consistent for all the files
-        # this run, and we don't keep retrying the same spellcheckers that will
-        # never work
-        set_spell_cmd($spellchecker)
-            if !$SPELLCHECKER;
-
-        return @words;
+        push @errors, "Unable to run '$spellchecker': $@";
     }
 
     # no working spellcheckers; report all the errors
@@ -71,13 +82,14 @@ sub _get_spellcheck_results {
 sub invalid_words_in {
     my $file = shift;
 
-    my $scratch = File::Temp->new->filename;
+    my $document = '';
+    open my $handle, '>', \$document;
 
     # save digested POD to temp file
     my $checker = Pod::Spell->new;
-    $checker->parse_from_file($file, $scratch);
+    $checker->parse_from_file($file, $handle);
 
-    my @words = _get_spellcheck_results($scratch);
+    my @words = _get_spellcheck_results($document);
 
     chomp for @words;
     return @words;
