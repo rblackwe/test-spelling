@@ -2,6 +2,8 @@ Revision history for Test-Spelling
 
 0.12  2011-04-25
         - Best Practical has taken over maintainership of this module
+        - Clean up temporary files more aggressively [rt.cpan.org #41586]
+          (reported by Tokuhiro Matsuno)
 
 0.11  2005-11-15
         - Some documentation fixes.

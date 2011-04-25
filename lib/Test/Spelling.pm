@@ -22,7 +22,6 @@ our $VERSION = '0.11';
 
 my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
-my $Spell_temp  = File::Temp->new->filename;
 
 sub pod_file_spelling_ok {
     my $file = shift;
@@ -34,12 +33,14 @@ sub pod_file_spelling_ok {
         return;
     }
 
+    my $scratch = File::Temp->new->filename;
+
     # save digested POD to temp file
     my $checker = Pod::Spell->new;
-    $checker->parse_from_file($file, $Spell_temp);
+    $checker->parse_from_file($file, $scratch);
 
     # run spell command and fetch output
-    open ASPELL, "$Spell_cmd < $Spell_temp|"
+    open ASPELL, "$Spell_cmd < $scratch|"
         or croak "Couldn't run spellcheck command '$Spell_cmd'";
     my @words = <ASPELL>;
     close ASPELL or die;
