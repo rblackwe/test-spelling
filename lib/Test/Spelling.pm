@@ -19,21 +19,14 @@ our @EXPORT = qw(
     set_pod_file_filter
 );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 my $Test        = Test::Builder->new;
 my $Spell_cmd   = 'spell';
 my $file_filter = sub { 1 };
 
-sub pod_file_spelling_ok {
+sub invalid_words_in {
     my $file = shift;
-    my $name = @_ ? shift : "POD spelling for $file";
-
-    if ( !-f $file ) {
-        $Test->ok( 0, $name );
-        $Test->diag( "$file does not exist" );
-        return;
-    }
 
     my $scratch = File::Temp->new->filename;
 
@@ -47,8 +40,23 @@ sub pod_file_spelling_ok {
     my @words = <$spellcheck_results>;
     close $spellcheck_results or die;
 
-    # clean up words, remove stopwords, select unique errors
     chomp for @words;
+    return @words;
+}
+
+sub pod_file_spelling_ok {
+    my $file = shift;
+    my $name = @_ ? shift : "POD spelling for $file";
+
+    if ( !-f $file ) {
+        $Test->ok( 0, $name );
+        $Test->diag( "$file does not exist" );
+        return;
+    }
+
+    my @words = invalid_words_in($file);
+
+    # remove stopwords, select unique errors
     @words = grep { !$Pod::Wordlist::Wordlist{$_} } @words;
     my %seen;
     @seen{@words} = ();
