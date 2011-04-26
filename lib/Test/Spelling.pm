@@ -304,12 +304,8 @@ first line looks like a perl shebang line.
 If there is no working spellchecker (determined by
 L</has_working_spellchecker>), this test will issue a "skip all" directive.
 
-If you're testing a distribution, just create a F<t/pod-spell.t>:
-
-    use Test::More;
-    plan skip_all => "Spelling tests only for authors" unless -d "inc/.author";
-    use Test::Spelling;
-    all_pod_files_spelling_ok();
+If you're testing a distribution, just create a F<t/pod-spell.t> with the code
+in the L</SYNOPSIS>.
 
 Returns true if every POD file has correct spelling, or false if any of them fail.
 This function will show any spelling errors as diagnostics.
